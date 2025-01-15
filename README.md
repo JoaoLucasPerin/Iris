@@ -17,5 +17,7 @@ Models used:
 8. Support Vector Machine (SVM), <br>
 9. XGBoost <br>
 
+Also, to select the winner model, K-Fold Cross-Validation with accuracy metric is used. <br>
+
 Documentation and more details on: <br>
 &#8594; <a href="https://medium.com/@joaolucasrpt/projeto-crisp-dm-utilizando-o-conjunto-de-dados-iris-0f98de856a56">Medium Article: Projeto CRISP-DM utilizando o conjunto de dados Iris </a> <br> 
