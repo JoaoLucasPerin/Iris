@@ -21,7 +21,9 @@ from sklearn.naive_bayes import GaussianNB                      # Naive Bayes
 import torch                                                    # Neural Network
 import torch.nn as nn                                           # Neural Network
 from sklearn.ensemble import RandomForestClassifier             # Random Forest Model
-
+from sklearn.linear_model import LogisticRegression             # Logistic Regression
+from sklearn.svm import SVC                                     # Support Vector Machine (SVM)
+from xgboost import XGBClassifier                               # XGBoost
 
 #### Options ####
 generate_graphs = False
@@ -199,6 +201,23 @@ def make_randomforest(x_train, y_train):
 
     return rf
 
+def make_logisticregression(x_train, y_train):
+    log = LogisticRegression()
+    log.fit(x_train,y_train)
+
+    return log
+
+def make_svm(x_train, y_train):
+    np.random.seed(seed) # if None, don't have seed
+    svc=SVC()
+    svc.fit(x_train, y_train) 
+    return svc
+
+def make_xgboost(x_train, y_train):
+    xgb = XGBClassifier()
+    xgb.fit(x_train, y_train)
+    return xgb
+
 #### Extract ####
 iris = load_iris()                                              # dataset in sklearn format
 iris_pd = pd.DataFrame(data=np.c_[iris['data'], iris['target']],
@@ -304,6 +323,41 @@ model_results_randomforest = randomforest_applied.predict(x_test)
 accuracy_randomforest = accuracy_score(correct_results, model_results_randomforest)
 print("Accuracy of Random Forest:", accuracy_randomforest)
 
+### 7. Logistic Regression ###
+
+# Build the model
+logit_applied = make_logisticregression(x_train, y_train)
+
+# Make predictions
+model_results_logit = logit_applied.predict(x_test)
+
+# Evaluate the model
+accuracy_logit = accuracy_score(correct_results, model_results_logit)
+print("Accuracy of Logistic Regression:", accuracy_logit)
+
+### 8. Support Vector Machine (SVM) ###
+
+# Build the model
+svm_applied = make_svm(x_train, y_train)
+
+# Make predictions
+model_results_svm = svm_applied.predict(x_test)
+
+# Evaluate the model
+accuracy_svm = accuracy_score(correct_results, model_results_svm)
+print("Accuracy of SVM:", accuracy_svm)
+
+### 9. XGBoost ###
+
+# Build the model
+xgboost_applied = make_xgboost(x_train, y_train)
+
+# Make predictions
+model_results_xgboost = xgboost_applied.predict(x_test)
+
+# Evaluate the model
+accuracy_xgboost = accuracy_score(correct_results, model_results_xgboost)
+print("Accuracy of XGBoost:", accuracy_xgboost)
 
 ### Data Validation and Model Selection ###
 
