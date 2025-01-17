@@ -1,3 +1,4 @@
+#### libraries ####
 # basic libraries
 import numpy as np                                              # linear algebra
 import pandas as pd                                             # loading data in table form  
@@ -23,7 +24,11 @@ import torch.nn as nn                                           # Neural Network
 from sklearn.ensemble import RandomForestClassifier             # Random Forest Model
 from sklearn.linear_model import LogisticRegression             # Logistic Regression
 from sklearn.svm import SVC                                     # Support Vector Machine (SVM)
+import xgboost as xgb                                           # XGBoost
 from xgboost import XGBClassifier                               # XGBoost
+from sklearn.model_selection import cross_val_score             # kfold cross-validation
+from sklearn.model_selection import StratifiedKFold             # kfold cross-validation to XGBoost
+import warnings                                                 # supress warnings for deprecated
 
 #### Options ####
 generate_graphs = False
@@ -32,6 +37,7 @@ if set_seed:
     seed = 1234                     # we will use the seed = 1234, to always have the same result
 else:
     seed = None
+warnings.filterwarnings("ignore")
 
 #### Functions ####
 # Scatterplots
@@ -77,6 +83,7 @@ def scatterplots_iris(data, variables):
     #plt.title('SepalWidth vs PetalWidth')
     plt.show()
 
+# Models
 def make_adaboost(x_train, y_train):
     ### 1. Adaboost ###
 
@@ -90,14 +97,6 @@ def make_adaboost(x_train, y_train):
     adaboostDT_applied = adaboostDT.fit(x_train,y_train)
 
     return adaboostDT_applied
-
-    """
-    # example of new plant to be classified:
-    flor_amostra = [[5, 2.1, 1, 0.1]]
-    flor_np = np.array(flor_amostra)
-    print(flor_np)
-    print(iris.target_names[adaboostDT.predict(flor_np)]) # setosa
-    """
 
 def make_gradientboosting(x_train, y_train):
     ### 2. Gradient Boosting ###
@@ -136,10 +135,7 @@ def make_naivebayes(x_train, y_train):
     return naivebayes_applied
 
 def make_neuralnetwork(x_train, y_train):
-    # Converting Data for PyTorch
-    X_tr_tensor = torch.tensor(x_train, dtype=torch.float32)
-    y_tr_tensor = torch.tensor(y_train, dtype=torch.long)
-
+    ### 5. Neural Network ###
     # Building the Neural Network
     class FullyConnected(nn.Module):
         def __init__(self):
@@ -193,6 +189,8 @@ def make_neuralnetwork(x_train, y_train):
     return model
 
 def make_randomforest(x_train, y_train):
+    ### 6. Random Forest ###
+
     #Create a Gaussian Classifier
     rf=RandomForestClassifier(n_estimators=100, random_state = seed)
 
@@ -202,27 +200,71 @@ def make_randomforest(x_train, y_train):
     return rf
 
 def make_logisticregression(x_train, y_train):
-    log = LogisticRegression()
-    log.fit(x_train,y_train)
+    ### 7. Logistic Regression ###
 
-    return log
+    logit = LogisticRegression()
+    logit.fit(x_train,y_train)
+
+    return logit
 
 def make_svm(x_train, y_train):
+    ### 8. Support Vector Machine (SVM) ###
+
     np.random.seed(seed) # if None, don't have seed
     svc=SVC()
     svc.fit(x_train, y_train) 
     return svc
 
 def make_xgboost(x_train, y_train):
-    xgb = XGBClassifier()
-    xgb.fit(x_train, y_train)
-    return xgb
+    ### 9. XGBoost ###
 
-#### Extract ####
-iris = load_iris()                                              # dataset in sklearn format
+    xgb = XGBClassifier(random_state=seed)
+    xgb_applied = xgb.fit(x_train, y_train)
+    return xgb, xgb_applied
+
+# kfold
+def make_kfold(model = None, x_values = None, y_values = None, k = None, metric = None, is_xgboost = False, is_neuralnetwork = False):
+    if is_xgboost == True:
+        scores = cross_val_score(model,x_values,y_values, scoring=metric,cv=StratifiedKFold())
+    if is_neuralnetwork == True:
+        x = x_values
+        y = y_values
+
+        splits = k
+        kf = StratifiedKFold(splits, shuffle=True)
+        indices = kf.split(x, y)
+        scores = []
+        for train, test in indices:
+            x_train, x_test, y_train, y_test = x[train], x[test], y[train], y[test]
+            
+            # Build the model
+            neuralnetwork_apllied = make_neuralnetwork(x_train, y_train)
+
+            # Make predictions
+            X_ts_tensor = torch.tensor(x_test, dtype=torch.float32)#.to('cuda:0')
+            ytest_pred = neuralnetwork_apllied(X_ts_tensor)
+            newytest = torch.argmax(ytest_pred, dim=1)
+
+            # Evaluate the Model
+            accuracy_neuralnetwork = accuracy_score(newytest.cpu(), y_test)
+            scores.append(accuracy_neuralnetwork)
+        scores = np.array(scores)
+    else: 
+        scores = cross_val_score(model, x_values, y_values, cv=k, scoring=metric)
+
+    metric_mean = scores.mean()
+
+    return metric_mean
+
+#### Data Extraction ####
+
+iris = load_iris() # dataset in sklearn format
 iris_pd = pd.DataFrame(data=np.c_[iris['data'], iris['target']],
                   columns= iris['feature_names'] + ['target']).astype({'target': int}) \
        .assign(species=lambda x: x['target'].map(dict(enumerate(iris['target_names'])))) # iris dataset in pandas dataframe format
+x_features = iris_pd.drop(['target', 'species'], axis=1)
+y_labels = iris_pd['target']
+
 
 #### Data Understanding ####
 
@@ -232,13 +274,20 @@ if generate_graphs:
     scatterplots_iris(iris_pd, variables)
 
 #### Data Preparation ####
+
 x = iris.data
 y = iris.target
 
 #### Modeling ####
 
+#### Applying models with train / test ####
+
 x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.3, random_state=seed)
 correct_results = y_test
+
+# Converting Data for PyTorch
+X_tr_tensor = torch.tensor(x_train, dtype=torch.float32)
+y_tr_tensor = torch.tensor(y_train, dtype=torch.long)
 
 ### 1. Adaboost ###
 
@@ -302,15 +351,6 @@ newytest = torch.argmax(ytest_pred, dim=1)
 accuracy_neuralnetwork = accuracy_score(newytest.cpu(), y_test)
 print("Accuracy of Neural Network:", accuracy_neuralnetwork)
 
-"""
-# example of new plant to be classified:
-flor_amostra = [[5, 2.1, 1, 0.1]]
-flor_np = np.array(flor_amostra)
-print(flor_np)
-y_predicted = torch.argmax(neuralnetwork_apllied(torch.tensor(flor_np, dtype=torch.float32)), dim=1).cpu().detach().numpy()
-print(iris.target_names[y_predicted]) # setosa
-"""
-
 ### 6. Random Forest ###
 
 # Build the model
@@ -350,7 +390,7 @@ print("Accuracy of SVM:", accuracy_svm)
 ### 9. XGBoost ###
 
 # Build the model
-xgboost_applied = make_xgboost(x_train, y_train)
+xgboost_applied, xgboost = make_xgboost(x_train, y_train)
 
 # Make predictions
 model_results_xgboost = xgboost_applied.predict(x_test)
@@ -359,7 +399,49 @@ model_results_xgboost = xgboost_applied.predict(x_test)
 accuracy_xgboost = accuracy_score(correct_results, model_results_xgboost)
 print("Accuracy of XGBoost:", accuracy_xgboost)
 
+
+# applying examples:
+
+"""
+# example of new plant to be classified:
+flor_amostra = [[5, 2.1, 1, 0.1]]
+flor_np = np.array(flor_amostra)
+print(flor_np)
+print(iris.target_names[adaboostDT.predict(flor_np)]) # setosa
+"""
+
+"""
+# example of new plant to be classified:
+flor_amostra = [[5, 2.1, 1, 0.1]]
+flor_np = np.array(flor_amostra)
+print(flor_np)
+y_predicted = torch.argmax(neuralnetwork_apllied(torch.tensor(flor_np, dtype=torch.float32)), dim=1).cpu().detach().numpy()
+print(iris.target_names[y_predicted]) # setosa
+"""
+
 ### Data Validation and Model Selection ###
+metric_used = 'accuracy'
+k_used = 5
+metric_adaboost = make_kfold(model = adaboostDT_applied, x_values = x, y_values = y, k = k_used, metric = metric_used) # 1. Adaboost
+metric_gratientboosting = make_kfold(model = gradientboosting_applied, x_values = x, y_values = y, k = k_used, metric = metric_used) # 2. Gradient Boosting
+metric_knn = make_kfold(model = knn_applied, x_values = x, y_values = y, k = k_used, metric = metric_used) # 3. KNN
+metric_naivebayes = make_kfold(model = naivebayes_applied, x_values = x, y_values = y, k = k_used, metric = metric_used) # 4. Naive Bayes
+metric_neuralnetwork = make_kfold(model = None, x_values = x, y_values = y, k = k_used, metric = metric_used, is_xgboost = False, is_neuralnetwork = True) # 5. Neural Network
+metric_randomforest = make_kfold(model = randomforest_applied, x_values = x, y_values = y, k = k_used, metric = metric_used) # 6. Random Forest
+metric_logisticregression = make_kfold(model = logit_applied, x_values = x, y_values = y, k = k_used, metric = metric_used) # 7. Logistic Regression
+metric_svm = make_kfold(model = svm_applied, x_values = x, y_values = y, k = k_used, metric = metric_used) # 8. SVM
+metric_xgboost = make_kfold(model = xgboost, x_values = x, y_values = y, k = k_used, metric = metric_used, is_xgboost=True) # 9. XGBoost
+
+print('Metrics of the models:')
+print(metric_used, 'of Adaboost:', metric_adaboost)
+print(metric_used, 'of Gradient Boosting:', metric_gratientboosting)
+print(metric_used, 'of KNN:', metric_knn)
+print(metric_used, 'of Naive Bayes:', metric_naivebayes)
+print(metric_used, 'of Neural Network:', metric_neuralnetwork)
+print(metric_used, 'of Random Forest:', metric_randomforest)
+print(metric_used, 'of Logistic Regression:', metric_logisticregression)
+print(metric_used, 'of SVM:', metric_svm)
+print(metric_used, 'of XGBoost:', metric_xgboost)
 
 ### Deploy ###
 # To deployment, we'll have 2 functions:
