@@ -37,6 +37,8 @@ if set_seed:
     seed = 1234                     # we will use the seed = 1234, to always have the same result
 else:
     seed = None
+run_simple_train_test = False
+run_kfold = True
 warnings.filterwarnings("ignore")
 
 #### Functions ####
@@ -265,7 +267,6 @@ iris_pd = pd.DataFrame(data=np.c_[iris['data'], iris['target']],
 x_features = iris_pd.drop(['target', 'species'], axis=1)
 y_labels = iris_pd['target']
 
-
 #### Data Understanding ####
 
 print(iris_pd.info())
@@ -294,110 +295,122 @@ y_tr_tensor = torch.tensor(y_train, dtype=torch.long)
 # Build the model
 adaboostDT_applied = make_adaboost(x_train,y_train)
 
-# Make predictions
-model_results_adaboostDT = adaboostDT_applied.predict(x_test)
+if run_simple_train_test:
+    # Make predictions
+    model_results_adaboostDT = adaboostDT_applied.predict(x_test)
 
-# Evaluate the model
-accuracy_adaboostDT = accuracy_score(correct_results, model_results_adaboostDT)
-print("Accuracy of Adaboost DT:", accuracy_adaboostDT)
+    # Evaluate the model
+    accuracy_adaboostDT = accuracy_score(correct_results, model_results_adaboostDT)
+    print("Accuracy of Adaboost DT:", accuracy_adaboostDT)
+
 
 ### 2. Gradient Boosting ###
 
 # Build the model
 gradientboosting_applied = make_gradientboosting(x_train, y_train)
 
-# Make predictions
-model_results_gradientboosting = gradientboosting_applied.predict(x_test)
+if run_simple_train_test:
+    # Make predictions
+    model_results_gradientboosting = gradientboosting_applied.predict(x_test)
 
-# Evaluate the model
-accuracy_gradientboosting = accuracy_score(correct_results, model_results_gradientboosting)
-print("Accuracy of Gradient Boosting:", accuracy_gradientboosting)
+    # Evaluate the model
+    accuracy_gradientboosting = accuracy_score(correct_results, model_results_gradientboosting)
+    print("Accuracy of Gradient Boosting:", accuracy_gradientboosting)
 
 ### 3. KNN: ###
 
 # Build the model
 knn_applied = make_knn(x_train, y_train)
 
-# Make predictions
-model_results_knn = knn_applied.predict(x_test)
+if run_simple_train_test:
+    # Make predictions
+    model_results_knn = knn_applied.predict(x_test)
 
-# Evaluate the model
-accuracy_KNN = accuracy_score(correct_results, model_results_knn)
-print("Accuracy of KNN:", accuracy_KNN)
+    # Evaluate the model
+    accuracy_KNN = accuracy_score(correct_results, model_results_knn)
+    print("Accuracy of KNN:", accuracy_KNN)
 
 ### 4. Naive Bayes ###
 
 # Build the model
 naivebayes_applied = make_naivebayes(x_train,y_train)
 
-# Make predictions
-model_results_naivebayes = naivebayes_applied.predict(x_test)
+if run_simple_train_test:
+    # Make predictions
+    model_results_naivebayes = naivebayes_applied.predict(x_test)
 
-# Evaluate the model
-accuracy_naivebayes = accuracy_score(correct_results, model_results_naivebayes)
-print("Accuracy of Naive Bayes:", accuracy_naivebayes)
+    # Evaluate the model
+    accuracy_naivebayes = accuracy_score(correct_results, model_results_naivebayes)
+    print("Accuracy of Naive Bayes:", accuracy_naivebayes)
 
 ### 5. Neural Network ###
 
 # Build the model
 neuralnetwork_apllied = make_neuralnetwork(x_train, y_train)
 
-# Make predictions
-X_ts_tensor = torch.tensor(x_test, dtype=torch.float32)#.to('cuda:0')
-ytest_pred = neuralnetwork_apllied(X_ts_tensor)
-newytest = torch.argmax(ytest_pred, dim=1)
+if run_simple_train_test:
 
-# Evaluate the Model
-accuracy_neuralnetwork = accuracy_score(newytest.cpu(), y_test)
-print("Accuracy of Neural Network:", accuracy_neuralnetwork)
+    # Make predictions
+    X_ts_tensor = torch.tensor(x_test, dtype=torch.float32)#.to('cuda:0')
+    ytest_pred = neuralnetwork_apllied(X_ts_tensor)
+    newytest = torch.argmax(ytest_pred, dim=1)
+
+    # Evaluate the Model
+    accuracy_neuralnetwork = accuracy_score(newytest.cpu(), y_test)
+    print("Accuracy of Neural Network:", accuracy_neuralnetwork)
 
 ### 6. Random Forest ###
 
 # Build the model
 randomforest_applied = make_randomforest(x_train,y_train)
 
-# Make predictions
-model_results_randomforest = randomforest_applied.predict(x_test)
+if run_simple_train_test:
+    # Make predictions
+    model_results_randomforest = randomforest_applied.predict(x_test)
 
-# Evaluate the model
-accuracy_randomforest = accuracy_score(correct_results, model_results_randomforest)
-print("Accuracy of Random Forest:", accuracy_randomforest)
+    # Evaluate the model
+    accuracy_randomforest = accuracy_score(correct_results, model_results_randomforest)
+    print("Accuracy of Random Forest:", accuracy_randomforest)
 
 ### 7. Logistic Regression ###
 
 # Build the model
 logit_applied = make_logisticregression(x_train, y_train)
 
-# Make predictions
-model_results_logit = logit_applied.predict(x_test)
+if run_simple_train_test:
+    # Make predictions
+    model_results_logit = logit_applied.predict(x_test)
 
-# Evaluate the model
-accuracy_logit = accuracy_score(correct_results, model_results_logit)
-print("Accuracy of Logistic Regression:", accuracy_logit)
+    # Evaluate the model
+    accuracy_logit = accuracy_score(correct_results, model_results_logit)
+    print("Accuracy of Logistic Regression:", accuracy_logit)
 
 ### 8. Support Vector Machine (SVM) ###
 
 # Build the model
 svm_applied = make_svm(x_train, y_train)
 
-# Make predictions
-model_results_svm = svm_applied.predict(x_test)
+if run_simple_train_test:
 
-# Evaluate the model
-accuracy_svm = accuracy_score(correct_results, model_results_svm)
-print("Accuracy of SVM:", accuracy_svm)
+    # Make predictions
+    model_results_svm = svm_applied.predict(x_test)
+
+    # Evaluate the model
+    accuracy_svm = accuracy_score(correct_results, model_results_svm)
+    print("Accuracy of SVM:", accuracy_svm)
 
 ### 9. XGBoost ###
 
 # Build the model
 xgboost_applied, xgboost = make_xgboost(x_train, y_train)
 
-# Make predictions
-model_results_xgboost = xgboost_applied.predict(x_test)
+if run_simple_train_test:
+    # Make predictions
+    model_results_xgboost = xgboost_applied.predict(x_test)
 
-# Evaluate the model
-accuracy_xgboost = accuracy_score(correct_results, model_results_xgboost)
-print("Accuracy of XGBoost:", accuracy_xgboost)
+    # Evaluate the model
+    accuracy_xgboost = accuracy_score(correct_results, model_results_xgboost)
+    print("Accuracy of XGBoost:", accuracy_xgboost)
 
 
 # applying examples:
