@@ -85,33 +85,35 @@ def scatterplots_iris(data, variables):
     #plt.title('SepalWidth vs PetalWidth')
     plt.show()
 
+### Modeling ###
 # Models
-def make_adaboost(x_train, y_train):
+def make_adaboost(x_train, y_train, seed = None):
     ### 1. Adaboost ###
 
     ## Adaboost with Decision Tree (DT) classifier (default) ##
 
     # Create adaboost classifier object
     # Adaboost uses DT classifier as default classifier
-    adaboostDT = AdaBoostClassifier(n_estimators=50,learning_rate=1) #learning_rate--> contributes to the weights to the weak learners.
+    adaboostDT = AdaBoostClassifier(n_estimators=50,learning_rate=1,random_state=seed) #learning_rate--> contributes to the weights to the weak learners.
 
     # training the classifier
     adaboostDT_applied = adaboostDT.fit(x_train,y_train)
 
-    return adaboostDT_applied
+    return adaboostDT_applied, adaboostDT
 
-def make_gradientboosting(x_train, y_train):
+def make_gradientboosting(x_train, y_train, seed = None):
     ### 2. Gradient Boosting ###
 
     # Create Gradient Boosting classifier object
-    gradientboosting = GradientBoostingClassifier(n_estimators=100, learning_rate=0.1, max_depth=3, random_state=42)
+    gradientboosting = GradientBoostingClassifier(n_estimators=100, learning_rate=0.1, max_depth=3, random_state=seed)
 
     # Train the Gradient Boosting Classifier
     gradientboosting_applied = gradientboosting.fit(x_train, y_train)
 
-    return gradientboosting_applied
+    return gradientboosting_applied, gradientboosting
 
 def make_knn(x_train, y_train):
+    ### 3. KNN ###
     # we have to set k to be the number of 
     # the appropriate value to k is sqrt(n)/2
     k = math.floor(math.sqrt(y.shape[0])/2)
@@ -123,7 +125,7 @@ def make_knn(x_train, y_train):
     #training the classifier
     knn_applied = knn.fit(x_train, y_train)
 
-    return knn_applied
+    return knn_applied, knn
 
 def make_naivebayes(x_train, y_train):
     ### 4. Naive Bayes ###
@@ -134,10 +136,14 @@ def make_naivebayes(x_train, y_train):
     # Train the Naive Bayes Classifier
     naivebayes_applied = naivebayes.fit(x_train,y_train)
 
-    return naivebayes_applied
+    return naivebayes_applied, naivebayes
 
-def make_neuralnetwork(x_train, y_train):
+def make_neuralnetwork(x_train, y_train, seed = None):
     ### 5. Neural Network ###
+    # Converting Data for PyTorch
+    X_tr_tensor = torch.tensor(x_train, dtype=torch.float32)
+    y_tr_tensor = torch.tensor(y_train, dtype=torch.long)
+
     # Building the Neural Network
     class FullyConnected(nn.Module):
         def __init__(self):
@@ -178,7 +184,7 @@ def make_neuralnetwork(x_train, y_train):
             plt.show()
 
     # seting the seed:
-    if set_seed:
+    if set_seed and seed is not None:
         torch.manual_seed(seed)
 
     # Running the Model
@@ -190,44 +196,45 @@ def make_neuralnetwork(x_train, y_train):
 
     return model
 
-def make_randomforest(x_train, y_train):
+def make_randomforest(x_train, y_train, seed = None):
     ### 6. Random Forest ###
 
     #Create a Gaussian Classifier
-    rf=RandomForestClassifier(n_estimators=100, random_state = seed)
+    randomforest = RandomForestClassifier(n_estimators=100, random_state = seed)
 
     #Train the model using the training sets y_pred=clf.predict(X_test)
-    rf.fit(x_train,y_train)
+    randomforest_applied = randomforest.fit(x_train,y_train)
 
-    return rf
+    return randomforest_applied, randomforest
 
 def make_logisticregression(x_train, y_train):
     ### 7. Logistic Regression ###
 
     logit = LogisticRegression()
-    logit.fit(x_train,y_train)
+    logit_applied = logit.fit(x_train,y_train)
 
-    return logit
+    return logit_applied, logit
 
-def make_svm(x_train, y_train):
+def make_svm(x_train, y_train, seed = None):
     ### 8. Support Vector Machine (SVM) ###
 
     np.random.seed(seed) # if None, don't have seed
-    svc=SVC()
-    svc.fit(x_train, y_train) 
-    return svc
+    svm=SVC()
+    svm_applied = svm.fit(x_train, y_train) 
+    return svm_applied, svm
 
-def make_xgboost(x_train, y_train):
+def make_xgboost(x_train, y_train, seed = None):
     ### 9. XGBoost ###
 
     xgb = XGBClassifier(random_state=seed)
     xgb_applied = xgb.fit(x_train, y_train)
     return xgb, xgb_applied
 
+### Data Validation and Model Selection ###
 # kfold
-def make_kfold(model = None, x_values = None, y_values = None, k = None, metric = None, is_xgboost = False, is_neuralnetwork = False):
+def make_kfold(model = None, x_values = None, y_values = None, k = None, metric = None, is_xgboost = False, is_neuralnetwork = False, seed = None):
     if is_xgboost == True:
-        scores = cross_val_score(model,x_values,y_values, scoring=metric,cv=StratifiedKFold())
+        scores = cross_val_score(model,x_values,y_values, scoring=metric, cv=StratifiedKFold())
     if is_neuralnetwork == True:
         x = x_values
         y = y_values
@@ -240,7 +247,10 @@ def make_kfold(model = None, x_values = None, y_values = None, k = None, metric 
             x_train, x_test, y_train, y_test = x[train], x[test], y[train], y[test]
             
             # Build the model
-            neuralnetwork_apllied = make_neuralnetwork(x_train, y_train)
+            if seed is not None:
+                neuralnetwork_apllied = make_neuralnetwork(x_train, y_train, seed)
+            else:
+                neuralnetwork_apllied = make_neuralnetwork(x_train, y_train)
 
             # Make predictions
             X_ts_tensor = torch.tensor(x_test, dtype=torch.float32)#.to('cuda:0')
@@ -258,14 +268,129 @@ def make_kfold(model = None, x_values = None, y_values = None, k = None, metric 
 
     return metric_mean
 
+# function to get model winner
+def apply_kfold_and_return_model_winner(
+    # mandatory fields:
+    x = None, y = None, 
+    # optional fields, with k = 5 and metric = 'accuracy' as default values
+    k_used = 5, metric_used = 'accuracy',
+    # optional fields: list of models possibly passed by the user
+    adaboostDT = None, gradientboosting = None, knn = None, naivebayes = None, 
+    randomforest = None, logit = None, svm = None, xgboost = None, neuralnetwork = None,
+    # optional field: seed
+    seed = None, silent = False):
+
+    if silent is False:
+        print('Metrics of the models:')
+    models_acc_matrix = pd.DataFrame(columns = ['model_name', 'model', 'acc'])
+
+    if adaboostDT is not None:
+        metric_adaboost = make_kfold(model = adaboostDT, x_values = x, y_values = y, k = k_used, metric = metric_used) # 1. Adaboost
+        if silent is False:
+            print(metric_used, 'of Adaboost:', metric_adaboost)
+        models_acc_matrix = pd.concat([models_acc_matrix, 
+                                       pd.DataFrame({'model_name': ['Adaboost'], 'model': [adaboostDT],'acc': [metric_adaboost]})], ignore_index=True)         
+
+    if gradientboosting is not None:
+        metric_gratientboosting = make_kfold(model = gradientboosting, x_values = x, y_values = y, k = k_used, metric = metric_used) # 2. Gradient Boosting
+        if silent is False:
+            print(metric_used, 'of Gradient Boosting:', metric_gratientboosting)
+        models_acc_matrix = pd.concat([models_acc_matrix, 
+                                       pd.DataFrame({'model_name': ['Gradient Boosting'], 'model': [gradientboosting],'acc': [metric_gratientboosting]})], ignore_index=True)         
+
+    if knn is not None:
+        metric_knn = make_kfold(model = knn, x_values = x, y_values = y, k = k_used, metric = metric_used) # 3. KNN
+        if silent is False:
+            print(metric_used, 'of KNN:', metric_knn)
+        models_acc_matrix = pd.concat([models_acc_matrix, 
+                                       pd.DataFrame({'model_name': ['KNN'],'model': [knn], 'acc': [metric_knn]})], ignore_index=True)         
+
+    if naivebayes is not None:
+        metric_naivebayes = make_kfold(model = naivebayes, x_values = x, y_values = y, k = k_used, metric = metric_used) # 4. Naive Bayes
+        if silent is False:
+            print(metric_used, 'of Naive Bayes:', metric_naivebayes)
+        models_acc_matrix = pd.concat([models_acc_matrix, 
+                                       pd.DataFrame({'model_name': ['Naive Bayes'], 'model': [naivebayes],'acc': [metric_naivebayes]})], ignore_index=True)         
+
+    if neuralnetwork is not None:
+        metric_neuralnetwork = make_kfold(model = None, x_values = x, y_values = y, k = k_used, metric = metric_used, is_xgboost = False, is_neuralnetwork = True, seed = seed) # 5. Neural Network
+        if silent is False:
+            print(metric_used, 'of Neural Network:', metric_neuralnetwork)
+        neuralnetwork_apllied = make_neuralnetwork(x, y, seed)
+        models_acc_matrix = pd.concat([models_acc_matrix, 
+                                       pd.DataFrame({'model_name': ['Neural Network'], 'model': [neuralnetwork_apllied],'acc': [metric_neuralnetwork]})], ignore_index=True)         
+    
+    if randomforest is not None:
+        metric_randomforest = make_kfold(model = randomforest, x_values = x, y_values = y, k = k_used, metric = metric_used) # 6. Random Forest
+        if silent is False:
+            print(metric_used, 'of Random Forest:', metric_randomforest)
+        models_acc_matrix = pd.concat([models_acc_matrix, 
+                                       pd.DataFrame({'model_name': ['Random Forest'], 'model': [randomforest],'acc': [metric_randomforest]})], ignore_index=True)         
+        
+    if logit is not None:
+        metric_logisticregression = make_kfold(model = logit, x_values = x, y_values = y, k = k_used, metric = metric_used) # 7. Logistic Regression
+        if silent is False:
+            print(metric_used, 'of Logistic Regression:', metric_logisticregression)
+        models_acc_matrix = pd.concat([models_acc_matrix, 
+                                       pd.DataFrame({'model_name': ['Logistic Regression'], 'model': [logit],'acc': [metric_logisticregression]})], ignore_index=True)                 
+    
+    if svm is not None:
+        metric_svm = make_kfold(model = svm, x_values = x, y_values = y, k = k_used, metric = metric_used) # 8. SVM
+        if silent is False:
+            print(metric_used, 'of SVM:', metric_svm)
+        models_acc_matrix = pd.concat([models_acc_matrix, 
+                                       pd.DataFrame({'model_name': ['SVM'], 'model': [svm],'acc': [metric_svm]})], ignore_index=True)         
+
+    if xgboost is not None:
+        metric_xgboost = make_kfold(model = xgboost, x_values = x, y_values = y, k = k_used, metric = metric_used, is_xgboost=True) # 9. XGBoost
+        if silent is False:
+            print(metric_used, 'of XGBoost:', metric_xgboost)
+        models_acc_matrix = pd.concat([models_acc_matrix, 
+                                       pd.DataFrame({'model_name': ['XGBoost'], 'model': [xgboost],'acc': [metric_xgboost]})], ignore_index=True)         
+    
+    #print(models_acc_matrix)
+    model_accs_pd = models_acc_matrix 
+
+    max_metric = max(model_accs_pd['acc'])
+
+    chosen_model = model_accs_pd[ abs(model_accs_pd['acc'] - max_metric) < 0.00001]
+    if silent is False:
+            print("Biggest accuracy:", max_metric)
+
+    if silent is False:
+            print("Model winner:", 
+            chosen_model['model_name'].values[0],
+            ", with metric=",
+            chosen_model['acc'].values[0])
+
+    return chosen_model # returning model informations
+
+### Deploy ###
+# For deployment, we'll have a new function, to get predicted values of new dataset, based on the model winner
+
+def get_predicted_species(model_winner = None, new_x_values = None, dataset_model = None):
+    if model_winner is None or new_x_values is None:
+        print('missing model, new base or dataset ...')
+    else:
+        flower_np = np.array(new_x_values)
+        if model_winner['model_name'].values[0] == 'Neural Network':
+            # In Neural Network algoritm, he have to transform the type of input data...
+            # Make predictions
+            X_ts_tensor = torch.tensor(flower_np, dtype=torch.float32)#.to('cuda:0')
+            y_pred_aux = model_winner['model'].values[0](X_ts_tensor)
+            y_pred_aux2 = torch.argmax(y_pred_aux, dim=1).cpu().detach().numpy()
+            # print(y_pred_aux2)
+            y_predicted = iris.target_names[y_pred_aux2]  
+        else:
+            y_predicted = iris.target_names[model_winner['model'].values[0].predict(flower_np)]
+    return y_predicted
+
 #### Data Extraction ####
 
 iris = load_iris() # dataset in sklearn format
 iris_pd = pd.DataFrame(data=np.c_[iris['data'], iris['target']],
                   columns= iris['feature_names'] + ['target']).astype({'target': int}) \
        .assign(species=lambda x: x['target'].map(dict(enumerate(iris['target_names'])))) # iris dataset in pandas dataframe format
-x_features = iris_pd.drop(['target', 'species'], axis=1)
-y_labels = iris_pd['target']
 
 #### Data Understanding ####
 
@@ -281,19 +406,22 @@ y = iris.target
 
 #### Modeling ####
 
-#### Applying models with train / test ####
+if run_simple_train_test:
+    #### Applying models with train / test ####
 
-x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.3, random_state=seed)
-correct_results = y_test
-
-# Converting Data for PyTorch
-X_tr_tensor = torch.tensor(x_train, dtype=torch.float32)
-y_tr_tensor = torch.tensor(y_train, dtype=torch.long)
+    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.3, random_state=seed)
+    correct_results = y_test
+else:
+    x_train = x
+    x_test = x 
+    y_train = y
+    y_test = y 
+    correct_results = y
 
 ### 1. Adaboost ###
 
 # Build the model
-adaboostDT_applied = make_adaboost(x_train,y_train)
+adaboostDT_applied, adaboostDT = make_adaboost(x_train,y_train, seed)
 
 if run_simple_train_test:
     # Make predictions
@@ -307,7 +435,7 @@ if run_simple_train_test:
 ### 2. Gradient Boosting ###
 
 # Build the model
-gradientboosting_applied = make_gradientboosting(x_train, y_train)
+gradientboosting_applied, gradientboosting = make_gradientboosting(x_train, y_train, seed)
 
 if run_simple_train_test:
     # Make predictions
@@ -317,10 +445,10 @@ if run_simple_train_test:
     accuracy_gradientboosting = accuracy_score(correct_results, model_results_gradientboosting)
     print("Accuracy of Gradient Boosting:", accuracy_gradientboosting)
 
-### 3. KNN: ###
+### 3. KNN ###
 
 # Build the model
-knn_applied = make_knn(x_train, y_train)
+knn_applied, knn = make_knn(x_train, y_train)
 
 if run_simple_train_test:
     # Make predictions
@@ -333,7 +461,7 @@ if run_simple_train_test:
 ### 4. Naive Bayes ###
 
 # Build the model
-naivebayes_applied = make_naivebayes(x_train,y_train)
+naivebayes_applied, naivebayes = make_naivebayes(x_train,y_train)
 
 if run_simple_train_test:
     # Make predictions
@@ -346,7 +474,7 @@ if run_simple_train_test:
 ### 5. Neural Network ###
 
 # Build the model
-neuralnetwork_apllied = make_neuralnetwork(x_train, y_train)
+neuralnetwork_apllied = make_neuralnetwork(x_train, y_train, seed)
 
 if run_simple_train_test:
 
@@ -362,7 +490,7 @@ if run_simple_train_test:
 ### 6. Random Forest ###
 
 # Build the model
-randomforest_applied = make_randomforest(x_train,y_train)
+randomforest_applied, randomforest = make_randomforest(x_train,y_train,seed)
 
 if run_simple_train_test:
     # Make predictions
@@ -375,7 +503,7 @@ if run_simple_train_test:
 ### 7. Logistic Regression ###
 
 # Build the model
-logit_applied = make_logisticregression(x_train, y_train)
+logit_applied, logit = make_logisticregression(x_train, y_train)
 
 if run_simple_train_test:
     # Make predictions
@@ -388,7 +516,7 @@ if run_simple_train_test:
 ### 8. Support Vector Machine (SVM) ###
 
 # Build the model
-svm_applied = make_svm(x_train, y_train)
+svm_applied, svm = make_svm(x_train, y_train, seed)
 
 if run_simple_train_test:
 
@@ -402,7 +530,7 @@ if run_simple_train_test:
 ### 9. XGBoost ###
 
 # Build the model
-xgboost_applied, xgboost = make_xgboost(x_train, y_train)
+xgboost_applied, xgboost = make_xgboost(x_train, y_train, seed)
 
 if run_simple_train_test:
     # Make predictions
@@ -433,30 +561,28 @@ print(iris.target_names[y_predicted]) # setosa
 """
 
 ### Data Validation and Model Selection ###
+
+# getting model winner:
 metric_used = 'accuracy'
 k_used = 5
-metric_adaboost = make_kfold(model = adaboostDT_applied, x_values = x, y_values = y, k = k_used, metric = metric_used) # 1. Adaboost
-metric_gratientboosting = make_kfold(model = gradientboosting_applied, x_values = x, y_values = y, k = k_used, metric = metric_used) # 2. Gradient Boosting
-metric_knn = make_kfold(model = knn_applied, x_values = x, y_values = y, k = k_used, metric = metric_used) # 3. KNN
-metric_naivebayes = make_kfold(model = naivebayes_applied, x_values = x, y_values = y, k = k_used, metric = metric_used) # 4. Naive Bayes
-metric_neuralnetwork = make_kfold(model = None, x_values = x, y_values = y, k = k_used, metric = metric_used, is_xgboost = False, is_neuralnetwork = True) # 5. Neural Network
-metric_randomforest = make_kfold(model = randomforest_applied, x_values = x, y_values = y, k = k_used, metric = metric_used) # 6. Random Forest
-metric_logisticregression = make_kfold(model = logit_applied, x_values = x, y_values = y, k = k_used, metric = metric_used) # 7. Logistic Regression
-metric_svm = make_kfold(model = svm_applied, x_values = x, y_values = y, k = k_used, metric = metric_used) # 8. SVM
-metric_xgboost = make_kfold(model = xgboost, x_values = x, y_values = y, k = k_used, metric = metric_used, is_xgboost=True) # 9. XGBoost
 
-print('Metrics of the models:')
-print(metric_used, 'of Adaboost:', metric_adaboost)
-print(metric_used, 'of Gradient Boosting:', metric_gratientboosting)
-print(metric_used, 'of KNN:', metric_knn)
-print(metric_used, 'of Naive Bayes:', metric_naivebayes)
-print(metric_used, 'of Neural Network:', metric_neuralnetwork)
-print(metric_used, 'of Random Forest:', metric_randomforest)
-print(metric_used, 'of Logistic Regression:', metric_logisticregression)
-print(metric_used, 'of SVM:', metric_svm)
-print(metric_used, 'of XGBoost:', metric_xgboost)
+model_winner = apply_kfold_and_return_model_winner(
+    # mandatory fields:
+    x = x, y = y, 
+    # optional fields, with k = 5 and metric = 'accuracy' as default values
+    k_used = k_used, metric_used = metric_used,
+    # list of models possibly passed by the user
+    adaboostDT = adaboostDT, gradientboosting = gradientboosting, knn = knn, naivebayes = naivebayes, 
+    randomforest = randomforest, logit = logit, svm = svm, xgboost = xgboost, neuralnetwork = True,
+    # seed possibly passed by the user
+    seed = seed, silent = False)
+
 
 ### Deploy ###
-# To deployment, we'll have 2 functions:
-# 1. a function with dataset input and informations about the model winner and mean_accuracy_kfold as output.
-# 2. a function with dataset train and dataset test as inputs and species predicted as output.
+# For deployment, we'll have a new function, to get predicted values of new dataset, based on the model winner
+
+new_flowers_studied = [[5, 2.1, 1, 0.1], [5.6, 2.8, 4.9, 2.0]] # will be setosa and virginica, in this example
+
+print(get_predicted_species(model_winner = model_winner, 
+                            new_x_values = new_flowers_studied, 
+                            dataset_model = iris))
