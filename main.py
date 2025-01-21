@@ -1,10 +1,10 @@
 #### libraries ####
 # basic libraries
-import numpy as np                                              # linear algebra
-import pandas as pd                                             # loading data in table form  
-import math                                                     # calculus
-import seaborn as sns                                           # visualisation 
-import matplotlib.pyplot as plt                                 # visualisation
+import numpy as np                                                      # linear algebra
+import pandas as pd                                                     # loading data in table form  
+import math                                                             # calculus
+import seaborn as sns                                                   # visualisation 
+import matplotlib.pyplot as plt                                         # visualisation
 # dataset
 from sklearn.datasets import load_iris
 #train test splits
@@ -12,23 +12,25 @@ from sklearn.model_selection import train_test_split
 # accuracy metric
 from sklearn.metrics import accuracy_score
 # normalization (normal (0,1))
-from sklearn.preprocessing import StandardScaler                # dummies
-from sklearn.preprocessing import OneHotEncoder                 # dummies
+from sklearn.preprocessing import StandardScaler                        # dummies
+from sklearn.preprocessing import OneHotEncoder                         # dummies
 # models
-from sklearn.neighbors import KNeighborsClassifier              # KNN 
-from sklearn.ensemble import AdaBoostClassifier                 # AdaBoost
-from sklearn.ensemble import GradientBoostingClassifier         # Gradient Boosting
-from sklearn.naive_bayes import GaussianNB                      # Naive Bayes   
-import torch                                                    # Neural Network
-import torch.nn as nn                                           # Neural Network
-from sklearn.ensemble import RandomForestClassifier             # Random Forest Model
-from sklearn.linear_model import LogisticRegression             # Logistic Regression
-from sklearn.svm import SVC                                     # Support Vector Machine (SVM)
-import xgboost as xgb                                           # XGBoost
-from xgboost import XGBClassifier                               # XGBoost
-from sklearn.model_selection import cross_val_score             # kfold cross-validation
-from sklearn.model_selection import StratifiedKFold             # kfold cross-validation to XGBoost
-import warnings                                                 # supress warnings for deprecated
+from sklearn.ensemble import AdaBoostClassifier                         # AdaBoost
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis    # Linear Discriminant Analysis (LDA)
+from sklearn.tree import DecisionTreeClassifier                         # Decision Tree Classifier (DTC)
+from sklearn.ensemble import GradientBoostingClassifier                 # Gradient Boosting
+from sklearn.neighbors import KNeighborsClassifier                      # KNN 
+from sklearn.naive_bayes import GaussianNB                              # Naive Bayes   
+import torch                                                            # Neural Network
+import torch.nn as nn                                                   # Neural Network
+from sklearn.ensemble import RandomForestClassifier                     # Random Forest Model
+from sklearn.linear_model import LogisticRegression                     # Logistic Regression (logit)
+from sklearn.svm import SVC                                             # Support Vector Machine (SVM)
+import xgboost as xgb                                                   # XGBoost
+from xgboost import XGBClassifier                                       # XGBoost
+from sklearn.model_selection import cross_val_score                     # kfold cross-validation
+from sklearn.model_selection import StratifiedKFold                     # kfold cross-validation to XGBoost
+import warnings                                                         # supress warnings for deprecated
 
 #### Options ####
 generate_graphs = False
@@ -87,6 +89,7 @@ def scatterplots_iris(data, variables):
 
 ### Modeling ###
 # Models
+# Models without seed aren't changeable
 def make_adaboost(x_train, y_train, seed = None):
     ### 1. Adaboost ###
 
@@ -100,6 +103,21 @@ def make_adaboost(x_train, y_train, seed = None):
     adaboostDT_applied = adaboostDT.fit(x_train,y_train)
 
     return adaboostDT_applied, adaboostDT
+
+def make_lda(x_train, y_train, seed = None):
+    ### 2. Linear Discriminant Analysis (LDA) [new] ###
+
+    lda = LinearDiscriminantAnalysis()
+    lda_applied = lda.fit(x_train, y_train)
+    return lda_applied, lda
+
+def make_dtc(x_train, y_train, seed = None):
+    ### 3. Decision Tree Classifier (DTC) [new] ###
+
+    dtc = DecisionTreeClassifier(random_state = seed)
+    dtc_applied = dtc.fit(x_train, y_train)
+
+    return dtc_applied, dtc
 
 def make_gradientboosting(x_train, y_train, seed = None):
     ### 2. Gradient Boosting ###
@@ -275,7 +293,7 @@ def apply_kfold_and_return_model_winner(
     # optional fields, with k = 5 and metric = 'accuracy' as default values
     k_used = 5, metric_used = 'accuracy',
     # optional fields: list of models possibly passed by the user
-    adaboostDT = None, gradientboosting = None, knn = None, naivebayes = None, 
+    adaboostDT = None, lda = None, dtc = None, gradientboosting = None, knn = None, naivebayes = None, 
     randomforest = None, logit = None, svm = None, xgboost = None, neuralnetwork = None,
     # optional field: seed
     seed = None, silent = False):
@@ -291,6 +309,20 @@ def apply_kfold_and_return_model_winner(
         models_acc_matrix = pd.concat([models_acc_matrix, 
                                        pd.DataFrame({'model_name': ['Adaboost'], 'model': [adaboostDT],'acc': [metric_adaboost]})], ignore_index=True)         
 
+    if lda is not None:
+        metric_lda = make_kfold(model = lda, x_values = x, y_values = y, k = k_used, metric = metric_used) # 7. Logistic Regression
+        if silent is False:
+            print(metric_used, 'of Linear Discriminant Analysis:', metric_lda)
+        models_acc_matrix = pd.concat([models_acc_matrix, 
+                                       pd.DataFrame({'model_name': ['Linear Discriminant Analysis'], 'model': [lda],'acc': [metric_lda]})], ignore_index=True)                 
+    
+    if dtc is not None:
+        metric_dtc = make_kfold(model = dtc, x_values = x, y_values = y, k = k_used, metric = metric_used) # 7. Logistic Regression
+        if silent is False:
+            print(metric_used, 'of Decision Tree Classifier:', metric_dtc)
+        models_acc_matrix = pd.concat([models_acc_matrix, 
+                                       pd.DataFrame({'model_name': ['Decision Tree Classifier'], 'model': [dtc],'acc': [metric_dtc]})], ignore_index=True)                 
+     
     if gradientboosting is not None:
         metric_gratientboosting = make_kfold(model = gradientboosting, x_values = x, y_values = y, k = k_used, metric = metric_used) # 2. Gradient Boosting
         if silent is False:
@@ -326,7 +358,7 @@ def apply_kfold_and_return_model_winner(
             print(metric_used, 'of Random Forest:', metric_randomforest)
         models_acc_matrix = pd.concat([models_acc_matrix, 
                                        pd.DataFrame({'model_name': ['Random Forest'], 'model': [randomforest],'acc': [metric_randomforest]})], ignore_index=True)         
-        
+   
     if logit is not None:
         metric_logisticregression = make_kfold(model = logit, x_values = x, y_values = y, k = k_used, metric = metric_used) # 7. Logistic Regression
         if silent is False:
@@ -365,9 +397,8 @@ def apply_kfold_and_return_model_winner(
 
     return chosen_model # returning model informations
 
-### Deploy ###
+# Deploy
 # For deployment, we'll have a new function, to get predicted values of new dataset, based on the model winner
-
 def get_predicted_species(model_winner = None, new_x_values = None, dataset_model = None):
     if model_winner is None or new_x_values is None:
         print('missing model, new base or dataset ...')
@@ -431,8 +462,31 @@ if run_simple_train_test:
     accuracy_adaboostDT = accuracy_score(correct_results, model_results_adaboostDT)
     print("Accuracy of Adaboost DT:", accuracy_adaboostDT)
 
+#### 2. Linear Discriminant Analysis ####
+# Build the model
+lda_applied, lda = make_lda(x_train,y_train,seed)
 
-### 2. Gradient Boosting ###
+if run_simple_train_test:
+    # Make predictions
+    model_results_lda = lda_applied.predict(x_test)
+
+    # Evaluate the model
+    accuracy_lda = accuracy_score(correct_results, model_results_lda)
+    print("Accuracy of Linear Discriminant Analysis:", accuracy_lda)
+
+#### 3. Decision Tree Classifier (DTC) ####
+# Build the model
+dtc_applied, dtc = make_dtc(x_train,y_train,seed)
+
+if run_simple_train_test:
+    # Make predictions
+    model_results_dtc = dtc_applied.predict(x_test)
+
+    # Evaluate the model
+    accuracy_dtc = accuracy_score(correct_results, model_results_dtc)
+    print("Accuracy of Decision Tree Classifier:", accuracy_dtc)
+
+### 4. Gradient Boosting ###
 
 # Build the model
 gradientboosting_applied, gradientboosting = make_gradientboosting(x_train, y_train, seed)
@@ -445,7 +499,7 @@ if run_simple_train_test:
     accuracy_gradientboosting = accuracy_score(correct_results, model_results_gradientboosting)
     print("Accuracy of Gradient Boosting:", accuracy_gradientboosting)
 
-### 3. KNN ###
+### 5. KNN ###
 
 # Build the model
 knn_applied, knn = make_knn(x_train, y_train)
@@ -458,7 +512,7 @@ if run_simple_train_test:
     accuracy_KNN = accuracy_score(correct_results, model_results_knn)
     print("Accuracy of KNN:", accuracy_KNN)
 
-### 4. Naive Bayes ###
+### 6. Naive Bayes ###
 
 # Build the model
 naivebayes_applied, naivebayes = make_naivebayes(x_train,y_train)
@@ -471,7 +525,7 @@ if run_simple_train_test:
     accuracy_naivebayes = accuracy_score(correct_results, model_results_naivebayes)
     print("Accuracy of Naive Bayes:", accuracy_naivebayes)
 
-### 5. Neural Network ###
+### 7. Neural Network ###
 
 # Build the model
 neuralnetwork_apllied = make_neuralnetwork(x_train, y_train, seed)
@@ -487,7 +541,7 @@ if run_simple_train_test:
     accuracy_neuralnetwork = accuracy_score(newytest.cpu(), y_test)
     print("Accuracy of Neural Network:", accuracy_neuralnetwork)
 
-### 6. Random Forest ###
+### 8. Random Forest ###
 
 # Build the model
 randomforest_applied, randomforest = make_randomforest(x_train,y_train,seed)
@@ -500,7 +554,7 @@ if run_simple_train_test:
     accuracy_randomforest = accuracy_score(correct_results, model_results_randomforest)
     print("Accuracy of Random Forest:", accuracy_randomforest)
 
-### 7. Logistic Regression ###
+### 9. Logistic Regression ###
 
 # Build the model
 logit_applied, logit = make_logisticregression(x_train, y_train)
@@ -513,7 +567,7 @@ if run_simple_train_test:
     accuracy_logit = accuracy_score(correct_results, model_results_logit)
     print("Accuracy of Logistic Regression:", accuracy_logit)
 
-### 8. Support Vector Machine (SVM) ###
+### 10. Support Vector Machine (SVM) ###
 
 # Build the model
 svm_applied, svm = make_svm(x_train, y_train, seed)
@@ -527,7 +581,7 @@ if run_simple_train_test:
     accuracy_svm = accuracy_score(correct_results, model_results_svm)
     print("Accuracy of SVM:", accuracy_svm)
 
-### 9. XGBoost ###
+### 11. XGBoost ###
 
 # Build the model
 xgboost_applied, xgboost = make_xgboost(x_train, y_train, seed)
@@ -572,11 +626,10 @@ model_winner = apply_kfold_and_return_model_winner(
     # optional fields, with k = 5 and metric = 'accuracy' as default values
     k_used = k_used, metric_used = metric_used,
     # list of models possibly passed by the user
-    adaboostDT = adaboostDT, gradientboosting = gradientboosting, knn = knn, naivebayes = naivebayes, 
+    adaboostDT = adaboostDT, lda = lda , dtc = dtc, gradientboosting = gradientboosting, knn = knn, naivebayes = naivebayes, 
     randomforest = randomforest, logit = logit, svm = svm, xgboost = xgboost, neuralnetwork = True,
     # seed possibly passed by the user
     seed = seed, silent = False)
-
 
 ### Deploy ###
 # For deployment, we'll have a new function, to get predicted values of new dataset, based on the model winner
