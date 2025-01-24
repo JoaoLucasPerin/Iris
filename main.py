@@ -11,9 +11,6 @@ from sklearn.datasets import load_iris
 from sklearn.model_selection import train_test_split
 # accuracy metric
 from sklearn.metrics import accuracy_score
-# normalization (normal (0,1))
-from sklearn.preprocessing import StandardScaler                        # dummies
-from sklearn.preprocessing import OneHotEncoder                         # dummies
 # models
 from sklearn.ensemble import AdaBoostClassifier                         # AdaBoost
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis    # Linear Discriminant Analysis (LDA)
@@ -105,14 +102,14 @@ def make_adaboost(x_train, y_train, seed = None):
     return adaboostDT_applied, adaboostDT
 
 def make_lda(x_train, y_train, seed = None):
-    ### 2. Linear Discriminant Analysis (LDA) [new] ###
+    ### 2. Linear Discriminant Analysis (LDA) ###
 
     lda = LinearDiscriminantAnalysis()
     lda_applied = lda.fit(x_train, y_train)
     return lda_applied, lda
 
 def make_dtc(x_train, y_train, seed = None):
-    ### 3. Decision Tree Classifier (DTC) [new] ###
+    ### 3. Decision Tree Classifier (DTC) ###
 
     dtc = DecisionTreeClassifier(random_state = seed)
     dtc_applied = dtc.fit(x_train, y_train)
@@ -120,7 +117,7 @@ def make_dtc(x_train, y_train, seed = None):
     return dtc_applied, dtc
 
 def make_gradientboosting(x_train, y_train, seed = None):
-    ### 2. Gradient Boosting ###
+    ### 4. Gradient Boosting ###
 
     # Create Gradient Boosting classifier object
     gradientboosting = GradientBoostingClassifier(n_estimators=100, learning_rate=0.1, max_depth=3, random_state=seed)
@@ -131,7 +128,7 @@ def make_gradientboosting(x_train, y_train, seed = None):
     return gradientboosting_applied, gradientboosting
 
 def make_knn(x_train, y_train):
-    ### 3. KNN ###
+    ### 5. KNN ###
     # we have to set k to be the number of 
     # the appropriate value to k is sqrt(n)/2
     k = math.floor(math.sqrt(y.shape[0])/2)
@@ -146,7 +143,7 @@ def make_knn(x_train, y_train):
     return knn_applied, knn
 
 def make_naivebayes(x_train, y_train):
-    ### 4. Naive Bayes ###
+    ### 6. Naive Bayes ###
 
     # Create Naive Bayes classifier object
     naivebayes = GaussianNB()
@@ -157,7 +154,7 @@ def make_naivebayes(x_train, y_train):
     return naivebayes_applied, naivebayes
 
 def make_neuralnetwork(x_train, y_train, seed = None):
-    ### 5. Neural Network ###
+    ### 7. Neural Network ###
     # Converting Data for PyTorch
     X_tr_tensor = torch.tensor(x_train, dtype=torch.float32)
     y_tr_tensor = torch.tensor(y_train, dtype=torch.long)
@@ -215,7 +212,7 @@ def make_neuralnetwork(x_train, y_train, seed = None):
     return model
 
 def make_randomforest(x_train, y_train, seed = None):
-    ### 6. Random Forest ###
+    ### 8. Random Forest ###
 
     #Create a Gaussian Classifier
     randomforest = RandomForestClassifier(n_estimators=100, random_state = seed)
@@ -226,7 +223,7 @@ def make_randomforest(x_train, y_train, seed = None):
     return randomforest_applied, randomforest
 
 def make_logisticregression(x_train, y_train):
-    ### 7. Logistic Regression ###
+    ### 9. Logistic Regression ###
 
     logit = LogisticRegression()
     logit_applied = logit.fit(x_train,y_train)
@@ -234,7 +231,7 @@ def make_logisticregression(x_train, y_train):
     return logit_applied, logit
 
 def make_svm(x_train, y_train, seed = None):
-    ### 8. Support Vector Machine (SVM) ###
+    ### 10. Support Vector Machine (SVM) ###
 
     np.random.seed(seed) # if None, don't have seed
     svm=SVC()
@@ -242,7 +239,7 @@ def make_svm(x_train, y_train, seed = None):
     return svm_applied, svm
 
 def make_xgboost(x_train, y_train, seed = None):
-    ### 9. XGBoost ###
+    ### 11. XGBoost ###
 
     xgb = XGBClassifier(random_state=seed)
     xgb_applied = xgb.fit(x_train, y_train)
