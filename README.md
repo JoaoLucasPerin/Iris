@@ -8,16 +8,18 @@ Using CRISP-DM methodology, this project compares different types of classificat
 
 Models used:
 1. Adaboost, <br>
-2. Gradient Boosting, <br>
-3. K-Nearest Neighbors (KNN), <br>
-4. Naive Bayes, <br>
-5. Neural Network, <br>
-6. Random Forest, <br>
-7. Regressão Logística, <br>
-8. Support Vector Machine (SVM), <br>
-9. XGBoost <br>
+2. Linear Discriminant Analysis (LDA), <br>
+3. Decision Tree Classificator (DTC), <br>
+4. Gradient Boosting, <br>
+5. K-Nearest Neighbors (KNN), <br>
+6. Naive Bayes, <br>
+7. Neural Network, <br>
+8. Random Forest, <br>
+9. Regressão Logística, <br>
+10. Support Vector Machine (SVM), <br>
+11. XGBoost <br>
 
-Also, to select the winner model, K-Fold Cross-Validation with accuracy metric is used. <br>
+Also, to select the winner model, K-Fold Cross-Validation with the mean of k=5 accuracies metric is used. <br>
 
 Documentation and more details on: <br>
 &#8594; <a href="https://medium.com/@joaolucasrpt/projeto-crisp-dm-utilizando-o-conjunto-de-dados-iris-0f98de856a56">Medium Article: Projeto CRISP-DM utilizando o conjunto de dados Iris </a> <br> 
